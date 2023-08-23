@@ -51,7 +51,7 @@ export const authOptions: NextAuthOptions = {
         password: {label: "Password", type: "password"}
       },
       async authorize(credentials, req): Promise<User | null> {
-        console.log(credentials, req)
+        console.log("kissa")
         return null;
       }
     })
