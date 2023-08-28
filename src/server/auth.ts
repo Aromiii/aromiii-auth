@@ -3,7 +3,6 @@ import {type GetServerSidePropsContext} from "next";
 import {type DefaultSession, getServerSession, type NextAuthOptions, User,} from "next-auth";
 import {prisma} from "~/server/db";
 import Credentials from "next-auth/providers/credentials";
-import * as console from "console";
 
 /**
  * Module augmentation for `next-auth` types. Allows us to add custom properties to the `session`
@@ -20,10 +19,15 @@ declare module "next-auth" {
     };
   }
 
-  // interface User {
-  //   // ...other properties
-  //   // role: UserRole;
-  // }
+  interface User {
+    id: string;
+    firstName: string;
+    lastName: string;
+    displayName: string;
+    username: string;
+    email: string;
+    image: string | null;
+  }
 }
 
 /**
@@ -44,16 +48,33 @@ export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
     Credentials({
-      id: "", type: "credentials",
-      name: "Credentials",
+      type: "credentials",
       credentials: {
         email: {label: "Email", type: "text"},
         password: {label: "Password", type: "password"}
       },
       async authorize(credentials, req): Promise<User | null> {
-        console.log("kissa")
-        return null;
-      }
+        const user = await prisma.user.findFirst({
+          where: {
+            email: credentials?.email,
+            password: credentials?.password
+          },
+        })
+
+        if (!user) {
+          throw Error("User doesn't exist")
+        }
+
+        return {
+          id: user.id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          displayName: user.displayName,
+          username: user.username,
+          email: user.email,
+          image: user.image
+        }
+      },
     })
   ],
 };

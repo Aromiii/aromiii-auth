@@ -14,7 +14,9 @@ export default function Signup() {
     const createUser = async (event: any) => {
         event.preventDefault()
         console.log("kissa")
-        await signIn("credentials")
+        await signIn("credentials", {}, {
+            
+        })
     }
 
     return (
