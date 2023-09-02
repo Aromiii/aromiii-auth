@@ -55,6 +55,7 @@ export const authOptions: NextAuthOptions = {
         name: {type: "text"},
         displayName: {type: "text"},
         username: {type: "text"},
+        isNewAccount: {type: "text"}
       },
       async authorize(credentials, req): Promise<User | null> {
         try {
@@ -69,33 +70,37 @@ export const authOptions: NextAuthOptions = {
           })
 
           if (!user) {
-            const existingUser = await prisma.user.findFirst({
-              where: {email: credentials.email},
-            });
+            if (credentials.isNewAccount == "signup") {
+              const existingUser = await prisma.user.findFirst({
+                where: {email: credentials.email},
+              });
 
-            if (existingUser) {
-              throw new Error("Email is already registered");
-            }
-
-            const hashedPassword = await bcrypt.hash(credentials.password, 10);
-
-            const newUser = await prisma.user.create({
-              data: {
-                email: credentials.email,
-                password: hashedPassword,
-                name: credentials.name,
-                displayName: credentials.displayName,
-                username: credentials.username,
+              if (existingUser) {
+                throw new Error("Email is already registered");
               }
-            })
 
-            return {
-              id: newUser.id,
-              name: newUser.name,
-              displayName: newUser.displayName,
-              username: newUser.username,
-              email: newUser.email,
-              image: newUser.image
+              const hashedPassword = await bcrypt.hash(credentials.password, 10);
+
+              const newUser = await prisma.user.create({
+                data: {
+                  email: credentials.email,
+                  password: hashedPassword,
+                  name: credentials.name,
+                  displayName: credentials.displayName,
+                  username: credentials.username,
+                }
+              })
+
+              return {
+                id: newUser.id,
+                name: newUser.name,
+                displayName: newUser.displayName,
+                username: newUser.username,
+                email: newUser.email,
+                image: newUser.image
+              }
+            } else {
+              throw new Error("Couldn't find the user record")
             }
           }
 
@@ -114,14 +119,16 @@ export const authOptions: NextAuthOptions = {
             email: user.email,
             image: user.image
           }
-        } catch (e) {
-          console.log(e)
+        } catch (e: any) {
+          console.error(e.message)
+          return null
         }
-
-        return null;
       },
     })
   ],
+  pages: {
+    signIn: "/login"
+  }
 };
 
 /**

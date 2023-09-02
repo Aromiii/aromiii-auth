@@ -19,7 +19,7 @@ export default function Signup() {
         }
 
         await signIn("credentials", {
-            redirect: true, email: email, password: password, name: name, displayName: displayName, username: username
+            redirect: true, email: email, password: password, name: name, displayName: displayName, username: username, isNewAccount: "signup"
         })
     }
 
