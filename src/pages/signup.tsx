@@ -13,6 +13,11 @@ export default function Signup() {
     const createUser = async (event: any) => {
         event.preventDefault()
 
+        if (password != passwordAgain) {
+            alert("Password and password confirmation doesn't match")
+            return;
+        }
+
         await signIn("credentials", {
             redirect: true, email: email, password: password, name: name, displayName: displayName, username: username
         })

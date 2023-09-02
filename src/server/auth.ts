@@ -76,7 +76,7 @@ export const authOptions: NextAuthOptions = {
             if (existingUser) {
               throw new Error("Email is already registered");
             }
-            
+
             const hashedPassword = await bcrypt.hash(credentials.password, 10);
 
             const newUser = await prisma.user.create({
