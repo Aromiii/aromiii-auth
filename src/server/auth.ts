@@ -3,6 +3,7 @@ import {type GetServerSidePropsContext} from "next";
 import {type DefaultSession, getServerSession, type NextAuthOptions, User,} from "next-auth";
 import {prisma} from "~/server/db";
 import Credentials from "next-auth/providers/credentials";
+import * as bcrypt from "bcrypt"
 
 /**
  * Module augmentation for `next-auth` types. Allows us to add custom properties to the `session`
@@ -21,8 +22,7 @@ declare module "next-auth" {
 
   interface User {
     id: string;
-    firstName: string;
-    lastName: string;
+    name: string,
     displayName: string;
     username: string;
     email: string;
@@ -51,29 +51,74 @@ export const authOptions: NextAuthOptions = {
       type: "credentials",
       credentials: {
         email: {label: "Email", type: "text"},
-        password: {label: "Password", type: "password"}
+        password: {label: "Password", type: "password"},
+        name: {type: "text"},
+        displayName: {type: "text"},
+        username: {type: "text"},
       },
       async authorize(credentials, req): Promise<User | null> {
-        const user = await prisma.user.findFirst({
-          where: {
-            email: credentials?.email,
-            password: credentials?.password
-          },
-        })
+        try {
+          if (!credentials) {
+            throw new Error("Credentials are not defined")
+          }
 
-        if (!user) {
-          throw Error("User doesn't exist")
+          const user = await prisma.user.findFirst({
+            where: {
+              email: credentials.email,
+            },
+          })
+
+          if (!user) {
+            const existingUser = await prisma.user.findFirst({
+              where: {email: credentials.email},
+            });
+
+            if (existingUser) {
+              throw new Error("Email is already registered");
+            }
+            
+            const hashedPassword = await bcrypt.hash(credentials.password, 10);
+
+            const newUser = await prisma.user.create({
+              data: {
+                email: credentials.email,
+                password: hashedPassword,
+                name: credentials.name,
+                displayName: credentials.displayName,
+                username: credentials.username,
+              }
+            })
+
+            return {
+              id: newUser.id,
+              name: newUser.name,
+              displayName: newUser.displayName,
+              username: newUser.username,
+              email: newUser.email,
+              image: newUser.image
+            }
+          }
+
+          // Verify the password using bcrypt
+          const passwordMatch = await bcrypt.compare(credentials.password, user.password);
+
+          if (!passwordMatch) {
+            throw new Error("Invalid password");
+          }
+
+          return {
+            id: user.id,
+            name: user.name,
+            displayName: user.displayName,
+            username: user.username,
+            email: user.email,
+            image: user.image
+          }
+        } catch (e) {
+          console.log(e)
         }
 
-        return {
-          id: user.id,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          displayName: user.displayName,
-          username: user.username,
-          email: user.email,
-          image: user.image
-        }
+        return null;
       },
     })
   ],

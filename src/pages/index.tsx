@@ -1,7 +1,8 @@
 import Head from "next/head";
+import {getSession} from "next-auth/react";
 
 export default function Home() {
-  return (
+    return (
     <>
       <Head>
         <title>Manage your Aromiii account</title>
