@@ -9,8 +9,8 @@ export default function Login() {
     const login = async (event: any) => {
         event.preventDefault()
 
-        await signIn("credentials", {
-            redirect: true, email: email, password: password
+        await signIn("signIn", {
+            email: email, password: password
         })
     }
 

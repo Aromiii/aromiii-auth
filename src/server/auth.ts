@@ -15,14 +15,19 @@ declare module "next-auth" {
   interface Session extends DefaultSession {
     user: DefaultSession["user"] & {
       id: string;
-      // ...other properties
-      // role: UserRole;
+      firstName: string;
+      lastName: string;
+      displayName: string;
+      username: string;
+      email: string;
+      image: string | null;
     };
   }
 
   interface User {
     id: string;
-    name: string,
+    firstName: string;
+    lastName: string;
     displayName: string;
     username: string;
     email: string;
@@ -36,98 +41,121 @@ declare module "next-auth" {
  * @see https://next-auth.js.org/configuration/options
  */
 export const authOptions: NextAuthOptions = {
+  session: {
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60,
+  },
   callbacks: {
-    session: ({ session, user }) => ({
-      ...session,
-      user: {
-        ...session.user,
-        id: user.id,
-      },
-    }),
+    session: ({session, token}) => {
+      return {
+        ...session,
+        user: {
+          ...session.user,
+          id: token.id,
+          firstName: token.firstName,
+          lastName: token.lastName,
+          username: token.username,
+          displayName: token.displayName
+        },
+      }
+    },
+    jwt: ({token, user}) => {
+      if (user) {
+        return {
+          ...token,
+          ...user
+        }
+      }
+      return token
+    }
   },
   adapter: PrismaAdapter(prisma),
   providers: [
     Credentials({
-      type: "credentials",
+      id: "signIn",
       credentials: {
         email: {label: "Email", type: "text"},
         password: {label: "Password", type: "password"},
-        name: {type: "text"},
-        displayName: {type: "text"},
-        username: {type: "text"},
-        isNewAccount: {type: "text"}
       },
       async authorize(credentials, req): Promise<User | null> {
-        try {
-          if (!credentials) {
-            throw new Error("Credentials are not defined")
-          }
+        if (!credentials?.email || !credentials?.password) {
+          return null
+        }
 
-          const user = await prisma.user.findFirst({
-            where: {
+        const user = await prisma.user.findUnique({
+          where: {
+            email: credentials.email,
+          },
+        })
+
+        if (!user) {
+          return null
+        }
+
+        const passwordMatch = await bcrypt.compare(credentials.password, user.password);
+
+        if (!passwordMatch) {
+          return null
+        }
+
+        return {
+
+          id: user.id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          displayName: user.displayName,
+          username: user.username,
+          email: user.email,
+          image: user.image
+        }
+      },
+    }),
+    Credentials({
+      id: "signUp",
+      credentials: {
+        email: {label: "Email", type: "text"},
+        password: {label: "Password", type: "password"},
+        firstName: {type: "text"},
+        lastName: {type: "text"},
+        displayName: {type: "text"},
+        username: {type: "text"},
+      },
+      async authorize(credentials, req): Promise<User | null> {
+        if (!credentials?.email || !credentials?.password || !credentials?.username || !credentials?.displayName || !credentials?.firstName || !credentials?.lastName) {
+          return null
+        }
+
+        try {
+          const newUser = await prisma.user.create({
+            data: {
               email: credentials.email,
-            },
+              password: await bcrypt.hash(credentials.password, 10),
+              firstName: credentials.firstName,
+              lastName: credentials.lastName,
+              username: credentials.lastName,
+              displayName: credentials.displayName
+            }
           })
 
-          if (!user) {
-            if (credentials.isNewAccount == "signup") {
-              const existingUser = await prisma.user.findFirst({
-                where: {email: credentials.email},
-              });
-
-              if (existingUser) {
-                throw new Error("Email is already registered");
-              }
-
-              const hashedPassword = await bcrypt.hash(credentials.password, 10);
-
-              const newUser = await prisma.user.create({
-                data: {
-                  email: credentials.email,
-                  password: hashedPassword,
-                  name: credentials.name,
-                  displayName: credentials.displayName,
-                  username: credentials.username,
-                }
-              })
-
-              return {
-                id: newUser.id,
-                name: newUser.name,
-                displayName: newUser.displayName,
-                username: newUser.username,
-                email: newUser.email,
-                image: newUser.image
-              }
-            } else {
-              throw new Error("Couldn't find the user record")
-            }
-          }
-
-          // Verify the password using bcrypt
-          const passwordMatch = await bcrypt.compare(credentials.password, user.password);
-
-          if (!passwordMatch) {
-            throw new Error("Invalid password");
-          }
-
           return {
-            id: user.id,
-            name: user.name,
-            displayName: user.displayName,
-            username: user.username,
-            email: user.email,
-            image: user.image
+            id: newUser.id,
+            firstName: newUser.firstName,
+            lastName: newUser.lastName,
+            displayName: newUser.displayName,
+            username: newUser.username,
+            email: newUser.email,
+            image: newUser.image,
           }
         } catch (e: any) {
-          console.error(e.message)
+          console.log(e.message)
           return null
         }
       },
     })
   ],
   pages: {
-    signIn: "/login"
+    signIn: "/login",
+    newUser: "/signup"
   }
 };
 
