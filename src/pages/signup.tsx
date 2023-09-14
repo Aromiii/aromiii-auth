@@ -1,5 +1,5 @@
 import Head from "next/head";
-import {useState} from "react";
+import React, {useState} from "react";
 import {signIn} from "next-auth/react";
 import {GetServerSidePropsContext} from "next";
 import {getServerSession} from "next-auth";
@@ -16,7 +16,7 @@ export default function Signup() {
     const [password, setPassword] = useState("");
     const [passwordAgain, setPasswordAgain] = useState("");
 
-    const createUser = async (event: any) => {
+    const createUser = (event: React.MouseEvent<HTMLButtonElement>) => {
         event.preventDefault()
 
         if (password != passwordAgain) {
@@ -24,10 +24,10 @@ export default function Signup() {
             return;
         }
 
-        await signIn("signUp", {
+        void signIn("signUp", {
             email: email, password: password, displayName: displayName, username: username, firstName: firstName, lastName: lastName
         }).then(() => {
-            router.push("/")
+            void router.push("/")
         })
     }
 

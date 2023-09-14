@@ -20,7 +20,7 @@ export default function Home({user}: InferGetServerSidePropsType<typeof getServe
                     <h1 className="text-2xl font-bold">Hello {session?.user?.displayName}</h1>
                     <div className="flex gap-3 mt-3">
                         <Link href="/edit" className="liveal-button bg-blue-600">Edit profile</Link>
-                        <button onClick={() => signOut()} className="liveal-button">Sign out</button>
+                        <button onClick={() => void signOut()} className="liveal-button">Sign out</button>
                     </div>
                 </div>
             </div>

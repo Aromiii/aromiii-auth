@@ -1,5 +1,5 @@
 import Head from "next/head";
-import {useState} from "react";
+import React, {useState} from "react";
 import {getServerSession} from "next-auth";
 import {authOptions} from "~/server/auth";
 import {GetServerSidePropsContext, InferGetServerSidePropsType} from "next";
@@ -11,7 +11,7 @@ export default function Edit({ user }: InferGetServerSidePropsType<typeof getSer
     const [displayName, setDisplayName] = useState(user.displayName);
     const [username, setUsername] = useState(user.username);
 
-    const editUser = async (event: any) => {
+    const editUser = (event: React.MouseEvent<HTMLButtonElement>) => {
         event.preventDefault()
     }
 

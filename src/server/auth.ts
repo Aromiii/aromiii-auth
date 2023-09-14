@@ -146,8 +146,8 @@ export const authOptions: NextAuthOptions = {
             email: newUser.email,
             image: newUser.image,
           }
-        } catch (e: any) {
-          console.log(e.message)
+        } catch (e: unknown) {
+          console.log(e)
           return null
         }
       },

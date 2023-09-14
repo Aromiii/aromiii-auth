@@ -1,5 +1,5 @@
 import Head from "next/head";
-import {useState} from "react";
+import React, {useState} from "react";
 import {signIn} from "next-auth/react";
 import {useRouter} from "next/router";
 import {GetServerSidePropsContext} from "next";
@@ -11,13 +11,13 @@ export default function Login() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
 
-    const login = async (event: any) => {
+    const login = (event: React.MouseEvent<HTMLButtonElement>) => {
         event.preventDefault()
 
-        await signIn("signIn", {
+        void signIn("signIn", {
             email: email, password: password
         }).then(() => {
-            router.push("/")
+            void router.push("/")
         })
     }
 
@@ -36,7 +36,7 @@ export default function Login() {
                         <input placeholder="Password" type="password"
                                onChange={event => setPassword(event.target.value)}/>
                         <div className="dark:bg-gray-800 bg-gray-200 h-0.5 rounded-full"/>
-                        <button className="liveal-button" onClick={(event) => void login(event)}>Log in</button>
+                        <button className="liveal-button" onClick={(event) => login(event)}>Log in</button>
                     </form>
                 </main>
             </div>
