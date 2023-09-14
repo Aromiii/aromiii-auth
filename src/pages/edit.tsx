@@ -4,15 +4,51 @@ import {getServerSession} from "next-auth";
 import {authOptions} from "~/server/auth";
 import {GetServerSidePropsContext, InferGetServerSidePropsType} from "next";
 import Link from "next/link";
+import {useRouter} from "next/router";
+import {useSession} from "next-auth/react";
 
 export default function Edit({ user }: InferGetServerSidePropsType<typeof getServerSideProps>) {
+    const { update } = useSession()
+    const router = useRouter()
     const [firstName, setFirstName] = useState(user.firstName);
     const [lastName, setLastName] = useState(user.lastName);
     const [displayName, setDisplayName] = useState(user.displayName);
     const [username, setUsername] = useState(user.username);
 
-    const editUser = (event: React.MouseEvent<HTMLButtonElement>) => {
+    const editUser = async (event: React.MouseEvent<HTMLButtonElement>) => {
         event.preventDefault()
+
+        if (!confirm("Do you want to update your account")) {
+            return
+        }
+
+        const response = await fetch("/api/user", {
+            method: "PUT",
+            credentials: "include",
+            headers:{'content-type': 'application/json'},
+            body: JSON.stringify({
+                displayName: displayName,
+                username: username,
+                firstName: firstName,
+                lastName: lastName,
+            })
+        });
+
+        if (response.status > 299) {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            const body: {message: string} = await response.json();
+            alert(body.message)
+        }
+
+        if (response.status < 299) {
+            await update({
+                displayName: displayName,
+                username: username,
+                firstName: firstName,
+                lastName: lastName,
+            })
+            void router.push("/")
+        }
     }
 
     return (

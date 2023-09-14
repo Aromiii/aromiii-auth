@@ -4,6 +4,7 @@ import {type DefaultSession, getServerSession, type NextAuthOptions, User,} from
 import {prisma} from "~/server/db";
 import Credentials from "next-auth/providers/credentials";
 import * as bcrypt from "bcrypt"
+import {z} from "zod";
 
 /**
  * Module augmentation for `next-auth` types. Allows us to add custom properties to the `session`
@@ -59,7 +60,32 @@ export const authOptions: NextAuthOptions = {
         },
       }
     },
-    jwt: ({token, user}) => {
+    jwt: ({token, user, session, trigger}) => {
+      if (trigger === "update") {
+        try {
+          const schema = z.object({
+            displayName: z.string(),
+            username: z.string(),
+            firstName: z.string(),
+            lastName: z.string()
+          })
+
+          const data = schema.parse(session)
+
+          return {
+            ...token,
+            ...user,
+            displayName: data.displayName,
+            username: data.username,
+            firstName: data.firstName,
+            lastName: data.lastName
+          };
+        } catch (e) {
+          // Handle any exceptions here
+        }
+      }
+
+
       if (user) {
         return {
           ...token,

@@ -5,6 +5,7 @@ import {GetServerSidePropsContext} from "next";
 import {getServerSession} from "next-auth";
 import {authOptions} from "~/server/auth";
 import {useRouter} from "next/router";
+import {z} from "zod";
 
 export default function Signup() {
     const router = useRouter()
@@ -23,6 +24,34 @@ export default function Signup() {
             alert("Password and password confirmation doesn't match")
             return;
         }
+
+        const schema = z.object({
+            email: z.string().email(),
+            password: z.string(),
+            firstName: z.string().max(50),
+            lastName: z.string().max(50),
+            displayName: z.string().min(3).max(30),
+            username: z.string().min(3).max(30)
+                .transform((value) => {
+                    // Remove whitespace
+                    value = value.trim().replace(/\s+/g, '');
+
+                    // Remove special characters
+                    value = value.replace(/[^a-zA-Z0-9-._~]/g, '');
+
+                    // Percent-encode the string
+                    value = encodeURIComponent(value);
+
+                    return value;
+                })
+                .refine((value) => {
+                    // Check if the resulting string is a valid URL path segment
+                    const url = new URL(`https://example.com/${value}`);
+                    return url.pathname.slice(1) === value;
+                }, {
+                    message: 'Value is not a valid URL path segment'
+                }),
+        });
 
         void signIn("signUp", {
             email: email, password: password, displayName: displayName, username: username, firstName: firstName, lastName: lastName
