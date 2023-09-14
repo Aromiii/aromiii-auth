@@ -1,8 +1,13 @@
 import Head from "next/head";
 import {useState} from "react";
 import {signIn} from "next-auth/react";
+import {useRouter} from "next/router";
+import {GetServerSidePropsContext} from "next";
+import {getServerSession} from "next-auth";
+import {authOptions} from "~/server/auth";
 
 export default function Login() {
+    const router = useRouter()
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
 
@@ -11,6 +16,8 @@ export default function Login() {
 
         await signIn("signIn", {
             email: email, password: password
+        }).then(() => {
+            router.push("/")
         })
     }
 
@@ -35,4 +42,25 @@ export default function Login() {
             </div>
         </>
     );
+}
+
+export async function getServerSideProps(context: GetServerSidePropsContext) {
+    const session = await getServerSession(
+        context.req,
+        context.res,
+        authOptions
+    )
+
+    if (session) {
+        return {
+            redirect: {
+                destination: "/",
+                permanent: true
+            }
+        }
+    }
+
+    return {
+        props: {}
+    }
 }

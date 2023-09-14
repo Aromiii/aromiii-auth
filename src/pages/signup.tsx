@@ -1,8 +1,13 @@
 import Head from "next/head";
 import {useState} from "react";
 import {signIn} from "next-auth/react";
+import {GetServerSidePropsContext} from "next";
+import {getServerSession} from "next-auth";
+import {authOptions} from "~/server/auth";
+import {useRouter} from "next/router";
 
 export default function Signup() {
+    const router = useRouter()
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
     const [displayName, setDisplayName] = useState("");
@@ -21,6 +26,8 @@ export default function Signup() {
 
         await signIn("signUp", {
             email: email, password: password, displayName: displayName, username: username, firstName: firstName, lastName: lastName
+        }).then(() => {
+            router.push("/")
         })
     }
 
@@ -59,4 +66,25 @@ export default function Signup() {
             </div>
         </>
     );
+}
+
+export async function getServerSideProps(context: GetServerSidePropsContext) {
+    const session = await getServerSession(
+        context.req,
+        context.res,
+        authOptions
+    )
+
+    if (session) {
+        return {
+            redirect: {
+                destination: "/",
+                permanent: true
+            }
+        }
+    }
+
+    return {
+        props: {}
+    }
 }
